@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# Configure <service>-mcp: write the credential file, install the launchd plist,
+# start the daemon.
+#
+# Run AFTER:
+#   - pipx install <package> (or equivalent)
+#   - you have your <credentials> in hand
+#
+# Usage:
+#   <ENV_VAR_1>="..." <ENV_VAR_2>="..." ./configure.sh
+#
+# All required env vars are validated below.
+
+set -euo pipefail
+
+# ============================================================================
+# Required env vars — fill in for your service
+# ============================================================================
+
+: "${CLIENT_ID:?missing CLIENT_ID}"
+: "${CLIENT_SECRET:?missing CLIENT_SECRET}"
+: "${REFRESH_TOKEN:?missing REFRESH_TOKEN}"
+# Add more as needed for your service:
+# : "${DEVELOPER_TOKEN:?missing DEVELOPER_TOKEN}"
+# : "${LOGIN_CUSTOMER_ID:?missing LOGIN_CUSTOMER_ID}"
+
+# ============================================================================
+# Paths
+# ============================================================================
+
+CONFIG_PATH="$HOME/.<service>.yaml"  # Adjust filename per your service
+PLIST_PATH="$HOME/Library/LaunchAgents/com.<service>-mcp.plist"
+LOG_PATH="$HOME/Library/Logs/<service>-mcp.log"
+
+# ============================================================================
+# Locate the MCP server binary
+# ============================================================================
+
+MCP_BINARY="$(command -v <binary-name> || true)"
+if [[ -z "$MCP_BINARY" ]]; then
+  echo "ERROR: <binary-name> not on PATH." >&2
+  echo "Run: pipx install <package> && pipx ensurepath" >&2
+  exit 1
+fi
+
+echo "✓ Found MCP binary at: $MCP_BINARY"
+
+# ============================================================================
+# Write the credential file
+# ============================================================================
+
+echo "→ Writing $CONFIG_PATH"
+
+if [[ -f "$CONFIG_PATH" ]]; then
+  echo "  $CONFIG_PATH already exists. Backing up to $CONFIG_PATH.bak"
+  cp "$CONFIG_PATH" "$CONFIG_PATH.bak"
+fi
+
+# Adjust the format per your service (YAML, JSON, INI, dotenv, etc.)
+cat > "$CONFIG_PATH" <<EOF
+client_id: "$CLIENT_ID"
+client_secret: "$CLIENT_SECRET"
+refresh_token: "$REFRESH_TOKEN"
+# Add more fields here as needed
+EOF
+
+chmod 600 "$CONFIG_PATH"
+echo "✓ Wrote credential file with 600 permissions"
+
+# ============================================================================
+# Install the launchd plist
+# ============================================================================
+
+echo "→ Writing $PLIST_PATH"
+
+mkdir -p "$(dirname "$PLIST_PATH")"
+
+cat > "$PLIST_PATH" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.<service>-mcp</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>$MCP_BINARY</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>CONFIG_PATH</key>
+        <string>$CONFIG_PATH</string>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>$LOG_PATH</string>
+
+    <key>StandardErrorPath</key>
+    <string>$LOG_PATH</string>
+</dict>
+</plist>
+EOF
+
+echo "✓ Wrote plist"
+
+# ============================================================================
+# Load the daemon
+# ============================================================================
+
+echo "→ Loading daemon"
+
+# Unload if already loaded (idempotent)
+launchctl bootout "gui/$UID" "$PLIST_PATH" 2>/dev/null || true
+
+launchctl bootstrap "gui/$UID" "$PLIST_PATH"
+
+sleep 2
+
+if launchctl list | grep -q "com.<service>-mcp"; then
+  echo "✓ Daemon started"
+else
+  echo "✗ Daemon did not start. Check the log:"
+  echo "  tail $LOG_PATH"
+  exit 1
+fi
+
+# ============================================================================
+# Done
+# ============================================================================
+
+cat <<EOF
+
+✅ Setup complete.
+
+Config:     $CONFIG_PATH
+Plist:      $PLIST_PATH
+Logs:       $LOG_PATH
+Verify:     launchctl list | grep <service>-mcp
+
+Now register the MCP server with Claude Code by editing
+~/.claude/settings.json — see SKILL.md Step 7.
+EOF

@@ -1,0 +1,94 @@
+# <service>-mcp-setup
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
+
+A [Claude Code](https://claude.com/claude-code) skill that walks you through setting up a local <Service> MCP server connected to your <account / workspace / org>.
+
+Run it once. From then on, Claude has access to <high-value capability>.
+
+## Why this exists
+
+<2-3 sentence why. Who is this for? What problem does it solve?>
+
+Example:
+> If you <do the thing this MCP enables>, you've probably wired up the same flow manually before. This skill solves the boring half — the MCP plumbing — so Claude can do the work from natural language across all your <accounts/workspaces/etc>.
+
+## What you get after setup
+
+- `<config-file-path>` — your <credential format> config
+- <A persistent daemon | A stdio-spawned process> for the MCP server
+- <Number> MCP tools available in Claude Code and Claude Desktop:
+  - `<tool_1>` — <what it does>
+  - `<tool_2>` — <what it does>
+
+## Requirements
+
+- macOS (or Linux, if you ship it)
+- [Claude Code](https://claude.com/claude-code) or [Claude Desktop](https://claude.ai/download)
+- A <Service> account
+- <Any developer access / approval requirements>
+- `pipx` (or `npm`, etc.)
+- Python 3.10+ (or whatever runtime)
+
+## Install
+
+```bash
+git clone https://github.com/<user>/<service>-mcp-setup.git ~/.claude/skills/<service>-mcp-setup
+```
+
+Restart Claude Code. The skill becomes available.
+
+## Usage
+
+In Claude Code, say:
+
+```
+Run <service>-mcp-setup. Walk me through it.
+```
+
+Claude reads `SKILL.md` and steps you through, in order:
+
+1. <Step 1>
+2. <Step 2>
+3. <...>
+8. Verify Claude can call the MCP
+
+Total time: <range> the first time. Most of it is <whatever the painful step is>.
+
+## What it does NOT do
+
+This skill is the setup layer. After it runs, you use:
+
+- [`<companion-skill-1>`](https://github.com/...) — <what it does>
+- [`<companion-skill-2>`](https://github.com/...) — <what it does>
+
+This skill produces nothing on its own. It's the connector that makes the others work.
+
+## Related skills
+
+| Skill | Relationship |
+|---|---|
+| <list 3-6 related skills> | <one-liner each> |
+
+## Repo structure
+
+```
+<service>-mcp-setup/
+├── SKILL.md
+├── README.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── .gitignore
+├── references/
+│   ├── <auth-doc>.md
+│   └── daemon-macos.md (if applicable)
+└── scripts/
+    └── configure.sh
+```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+Built by [<You>](https://github.com/<your-handle>).

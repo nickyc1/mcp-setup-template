@@ -1,0 +1,114 @@
+# macOS launchd setup for <service>-mcp
+
+Run the MCP server as a persistent user-level daemon. Auto-starts on login, auto-restarts on crash, survives reboots.
+
+## The plist
+
+Save at `~/Library/LaunchAgents/com.<service>-mcp.plist`. Replace placeholders before installing.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.<service>-mcp</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>BINARY_ABSOLUTE_PATH</string>
+        <!-- Add flags as needed -->
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>CONFIG_PATH</key>
+        <string>/Users/YOUR_USER/.<service>.yaml</string>
+
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/YOUR_USER/Library/Logs/<service>-mcp.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/YOUR_USER/Library/Logs/<service>-mcp.log</string>
+</dict>
+</plist>
+```
+
+### Required substitutions
+
+| Placeholder | What to put |
+|---|---|
+| `BINARY_ABSOLUTE_PATH` | Output of `which <binary-name>` — must be absolute, no `$HOME` or `~` |
+| `YOUR_USER` | Your macOS username (or replace with `/Users/$(whoami)` when running configure.sh) |
+| `<service>` | Your service name (e.g., `pinecone`, `notion`, `linear`) |
+
+## Install commands
+
+```bash
+# Load the plist (since macOS 11+)
+launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.<service>-mcp.plist
+
+# Check it's running
+launchctl list | grep <service>-mcp
+
+# Watch the logs
+tail -f ~/Library/Logs/<service>-mcp.log
+```
+
+## Reload after editing the plist
+
+launchd doesn't pick up plist changes automatically. After any edit:
+
+```bash
+launchctl bootout gui/$UID ~/Library/LaunchAgents/com.<service>-mcp.plist
+launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.<service>-mcp.plist
+```
+
+## Stop / uninstall
+
+```bash
+# Stop
+launchctl bootout gui/$UID ~/Library/LaunchAgents/com.<service>-mcp.plist
+
+# Remove the plist
+rm ~/Library/LaunchAgents/com.<service>-mcp.plist
+
+# Remove the credential file (only if you're done with this MCP entirely)
+rm ~/.<service>.yaml
+```
+
+## Common gotchas
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Daemon shows `exit code 78` | Path in `ProgramArguments` has `$HOME` or `~` | Use absolute path; plist doesn't expand env-style paths |
+| Daemon starts, then exits immediately | Binary on `PATH` for your shell but not for launchd | Add `PATH` explicitly in `EnvironmentVariables` |
+| Logs are empty | `StandardOutPath` directory doesn't exist | `mkdir -p ~/Library/Logs/` |
+| Daemon won't reload after edit | Need to `bootout` before `bootstrap` | Run both commands; launchd doesn't auto-reload |
+| `Bootstrap failed: 5: Input/output error` | Plist already loaded | Run `bootout` first |
+| Daemon starts but Claude can't see it | Wrong URL/port in Claude settings.json | Verify port matches what the binary listens on |
+
+## Logs
+
+The log file at `~/Library/Logs/<service>-mcp.log` is your debugging best friend. When something's wrong:
+
+```bash
+tail -50 ~/Library/Logs/<service>-mcp.log
+```
+
+Common log signals:
+
+- `Listening on http://0.0.0.0:PORT` — server is up
+- `OAuth error` — credential issue, check the config file
+- `ImportError` — package install incomplete; re-run `pipx install`
+- `Address already in use` — port conflict; change the port or kill the conflicting process

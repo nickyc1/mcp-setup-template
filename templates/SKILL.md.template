@@ -1,0 +1,132 @@
+---
+name: <SERVICE>-mcp-setup
+description: First-time setup guide for the <Service> MCP server (<package-name>). Walks through <auth type>, <token exchange>, <install>, <config>, <daemon (if applicable)>, and Claude Code registration. Works with both Claude Code and Claude Desktop. Run once, then <one-line description of what Claude can do after setup>.
+metadata:
+  version: 1.0.0
+---
+
+# <Service> MCP Setup
+
+<One-paragraph hook. What's the high-value capability the operator gets after this is done? Example: "Connect Claude to your <Service> account so it can query/manage <resource>. Once set up, Claude can <specific examples of what it can do, 3-4 items>.">
+
+The MCP server is `<package-name>`, an <official | unofficial> package from `<github-org>/<github-repo>`. It speaks the <Service> API on your behalf, with auth driven by <where the credential lives>.
+
+## Prerequisites
+
+- macOS (the daemon setup is launchd-based; <see references/daemon-linux.md for Linux if you ship it>)
+- [Claude Code](https://claude.com/claude-code) or [Claude Desktop](https://claude.ai/download)
+- A <Service> account (link to signup if relevant)
+- <Any developer-tier requirements, with approval timing>
+- <Local tools needed: pipx, npm, brew, etc.>
+- <Python or Node version requirements>
+
+## Step 1: Create the <auth credential>
+
+<Brief preamble. Why this step.>
+
+<Either inline instructions OR link to references/<auth-doc>.md>
+
+If this worked, you should have: <the artifact, e.g., "a `client_id`, `client_secret`, and developer token in hand">.
+
+## Step 2: <Token exchange or secondary credential, if applicable>
+
+<...>
+
+## Step 3: Install the MCP server
+
+```bash
+<install command — pipx install, npm install -g, etc.>
+```
+
+Verify the binary is on PATH:
+
+```bash
+which <binary-name>
+```
+
+## Step 4: Generate the refresh / access token
+
+<If OAuth, the CLI flow that exchanges client_id+secret for a refresh token. If API key, this section can be skipped or merged.>
+
+```bash
+<command that gets you the long-lived credential>
+```
+
+## Step 5: Write the config file
+
+Run the configure script:
+
+```bash
+CLIENT_ID="..." \
+CLIENT_SECRET="..." \
+REFRESH_TOKEN="..." \
+<OTHER_VARS>="..." \
+./scripts/configure.sh
+```
+
+This writes `<config file path>` and installs the daemon (if applicable).
+
+## Step 6: Install the daemon (if applicable)
+
+The configure script in Step 5 handles this. If you need to install manually, see `references/daemon-macos.md`.
+
+Verify the daemon is running:
+
+```bash
+launchctl list | grep <service>
+```
+
+## Step 7: Register with Claude Code
+
+Add to your `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "<service>": {
+      <stdio config OR url config>
+    }
+  }
+}
+```
+
+Restart Claude Code (or Claude Desktop).
+
+## Step 8: Verify
+
+In Claude Code, say:
+
+> "List my accessible <Service> accounts."
+
+You should see <expected output>. If you see auth errors or no tools, jump to Troubleshooting below.
+
+## Use with the rest of the stack
+
+Once set up, you can use:
+
+- [`<companion-skill-1>`](https://github.com/...) — <what it does>
+- [`<companion-skill-2>`](https://github.com/...) — <what it does>
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `401 Unauthorized` from the MCP | <cause> | <fix> |
+| Claude doesn't see the MCP tools | <cause> | <fix> |
+| Daemon fails to start | <cause> | <fix> |
+| `<other typical error>` | <cause> | <fix> |
+| Refresh token expired | OAuth client in "Testing" mode | Promote to "In production" in the OAuth consent screen |
+
+## Uninstall
+
+1. Stop the daemon: `launchctl bootout gui/$UID ~/Library/LaunchAgents/com.<service>-mcp.plist`
+2. Remove the daemon: `rm ~/Library/LaunchAgents/com.<service>-mcp.plist`
+3. Remove the config: `rm <config-file-path>`
+4. Uninstall the package: `pipx uninstall <package>` (or equivalent)
+5. Remove from Claude: edit `~/.claude/settings.json`, delete the `mcpServers.<service>` block
+
+## Related skills
+
+| Skill | Relationship |
+|---|---|
+| <list 3-6 related skills here> | <one-liner each> |
