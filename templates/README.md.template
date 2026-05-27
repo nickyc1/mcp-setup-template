@@ -3,80 +3,180 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
 
-A [Claude Code](https://claude.com/claude-code) skill that walks you through setting up a local <Service> MCP server connected to your <account / workspace / org>.
+A [Claude Code](https://claude.com/claude-code) skill that walks you through setting up a local <Service> MCP server connected to your <account / workspace / org> — so Claude can <high-value capability> from natural language.
 
-Run it once. From then on, Claude has access to <high-value capability>.
-
-## Why this exists
-
-<2-3 sentence why. Who is this for? What problem does it solve?>
-
-Example:
-> If you <do the thing this MCP enables>, you've probably wired up the same flow manually before. This skill solves the boring half — the MCP plumbing — so Claude can do the work from natural language across all your <accounts/workspaces/etc>.
+Run it once. From then on, Claude has the keys to <the thing>.
 
 ## What you get after setup
 
 - `<config-file-path>` — your <credential format> config
-- <A persistent daemon | A stdio-spawned process> for the MCP server
+- <A persistent daemon | A stdio-spawned process> for the MCP server (running locally on your machine)
 - <Number> MCP tools available in Claude Code and Claude Desktop:
   - `<tool_1>` — <what it does>
   - `<tool_2>` — <what it does>
+  - `<tool_3>` — <what it does>
 
-## Requirements
+After setup you can say things like:
 
-- macOS (or Linux, if you ship it)
-- [Claude Code](https://claude.com/claude-code) or [Claude Desktop](https://claude.ai/download)
-- A <Service> account
-- <Any developer access / approval requirements>
-- `pipx` (or `npm`, etc.)
-- Python 3.10+ (or whatever runtime)
+- "<example natural-language prompt 1>"
+- "<example natural-language prompt 2>"
+- "<example natural-language prompt 3>"
+- "<example natural-language prompt 4>"
 
-## Install
+All from natural language. All from one <Service> connection.
+
+## Time + difficulty
+
+- **Total time:** about <X> minutes the first time
+- **Difficulty:** <Easy | Medium | Hard>. <One-sentence reason.>
+- **Hardest part:** <what trips first-timers up — usually a permission / role / OAuth quirk>
+
+## Prerequisites
+
+You need all <N>. The skill will pause and ask if any are missing.
+
+1. **<Account-level prerequisite>** with <required role / permission>. <Where to get it.>
+2. **<Permission-level prerequisite>** — <what specifically>. <Why it's required.>
+3. **<Tooling-level prerequisite>** — <install command>. Confirm with `<verify command>`.
+4. **<Anything platform-specific>** — Mac/Linux/Windows notes.
+
+If any of these are missing, set them up first. <Optional: call out the long-pole one so they can start it today even if they're not setting up the MCP for another week.>
+
+## Setup, step by step
+
+Each step is independently verifiable. If a verification fails, fix that step before moving on.
+
+### Step 1 — <Action verb + what>
+
+```bash
+<exact command>
+```
+
+Verify:
+
+```bash
+<verify command>
+```
+
+Expected output: <what they should see>. If <common failure>, <fix>.
+
+### Step 2 — <Next action>
+
+<Numbered sub-steps for any clickable UI steps>
+
+1. Go to <URL>, click **<Button>**.
+2. Pick <option>.
+3. Name it `<value>`. Click <Save>.
+4. Grab the <thing> from <where it appears>.
+
+Detail: [`references/<auth-doc>.md`](references/<auth-doc>.md).
+
+### Step 3 — <Auth setup>
+
+<The OAuth / API key / token generation step in detail. This is usually the load-bearing step. Inline the exact UI clicks AND a curl verification.>
+
+Verify the credential works:
+
+```bash
+CRED="..."  # paste your credential
+curl "<verification endpoint>"
+```
+
+Expected: <what they should see>. If <common error>, <fix>.
+
+### Step 4 — Register the MCP with Claude Code
+
+Add an entry to `~/.claude.json` under `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "<service-name>": {
+      "type": "stdio",
+      "command": "<spawn command>",
+      "args": ["<arg1>", "<arg2>"],
+      "env": {
+        "<ENV_VAR_1>": "<value from earlier step>",
+        "<ENV_VAR_2>": "<value from earlier step>"
+      }
+    }
+  }
+}
+```
+
+Or use the helper:
+
+```bash
+./scripts/configure.sh
+```
+
+It prompts for the values, patches `~/.claude.json`, and validates before returning.
+
+Restart Claude Code so it picks up the new MCP.
+
+### Step 5 — Verify end-to-end
+
+Open a fresh Claude Code session. Ask:
+
+> List the tools available from the <service-name> MCP.
+
+Claude should return `<tool_1>`, `<tool_2>`, plus others. If "no MCP called <service-name> is connected," the config didn't load — restart Claude Code or check `python3 -m json.tool ~/.claude.json` for syntax errors.
+
+Then:
+
+> <Specific natural-language prompt that exercises the read path>
+
+You should get real data back. If <common empty-result issue>, go back to step <X> and <fix>.
+
+Don't run write operations against production until you've also wired up a safety harness (propose to a sheet → second-AI review → human approve). See [google-ads-mcp-setup](https://github.com/<user>/google-ads-mcp-setup) for the canonical pattern.
+
+## Install as a Claude Code skill
+
+If you want SKILL.md to be discoverable by Claude Code's skill system, clone into your skills directory:
 
 ```bash
 git clone https://github.com/<user>/<service>-mcp-setup.git ~/.claude/skills/<service>-mcp-setup
 ```
 
-Restart Claude Code. The skill becomes available.
+Restart Claude Code. Then say:
 
-## Usage
+> Run <service>-mcp-setup. Walk me through it.
 
-In Claude Code, say:
+Claude reads `SKILL.md` and steps you through the same flow above, pausing for verification at each step.
 
-```
-Run <service>-mcp-setup. Walk me through it.
-```
+## Troubleshooting (top three gotchas)
 
-Claude reads `SKILL.md` and steps you through, in order:
+**<First common failure mode>.** <One-sentence diagnosis.> <One-sentence fix.>
 
-1. <Step 1>
-2. <Step 2>
-3. <...>
-8. Verify Claude can call the MCP
+**<Second common failure mode>.** <One-sentence diagnosis.> <One-sentence fix.>
 
-Total time: <range> the first time. Most of it is <whatever the painful step is>.
+**<Third common failure mode>.** <One-sentence diagnosis.> <One-sentence fix.>
 
-## What it does NOT do
+Full troubleshooting list in [`SKILL.md`](SKILL.md#troubleshooting).
 
-This skill is the setup layer. After it runs, you use:
+## What this does NOT do
 
-- [`<companion-skill-1>`](https://github.com/...) — <what it does>
-- [`<companion-skill-2>`](https://github.com/...) — <what it does>
+This is the setup layer. After it runs, you use other skills for the actual <domain> work:
 
-This skill produces nothing on its own. It's the connector that makes the others work.
+- [`<companion-skill-1>`](https://github.com/<user>/<companion-1>) — <what it does>
+- [`<companion-skill-2>`](https://github.com/<user>/<companion-2>) — <what it does>
+
+This skill produces nothing on its own. It's the connector that makes the others work for <Service>.
 
 ## Related skills
 
 | Skill | Relationship |
 |---|---|
-| <list 3-6 related skills> | <one-liner each> |
+| [`<related-1>`](https://github.com/<user>/<related-1>) | <one-liner> |
+| [`<related-2>`](https://github.com/<user>/<related-2>) | <one-liner> |
+| [`<related-3>`](https://github.com/<user>/<related-3>) | <one-liner> |
 
 ## Repo structure
 
 ```
 <service>-mcp-setup/
-├── SKILL.md
-├── README.md
+├── SKILL.md                              # the skill prompt Claude Code reads
+├── README.md                             # this file
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── .gitignore
@@ -91,4 +191,21 @@ This skill produces nothing on its own. It's the connector that makes the others
 
 MIT — see [LICENSE](LICENSE).
 
-Built by [<You>](https://github.com/<your-handle>).
+Built by [<You>](https://github.com/<your-handle>). Part of the [<your stack name>](https://github.com/<your-handle>).
+
+---
+
+## Template authoring notes (delete this section before publishing)
+
+This README template is from [mcp-setup-template](https://github.com/nickyc1/mcp-setup-template).
+
+**Hard requirements when filling it in:**
+
+1. **Lead with the outcome, not the architecture.** Visitor should know what they get in 30 seconds.
+2. **Time + difficulty above the fold.** Sets expectations before they invest.
+3. **Numbered, verifiable steps.** Each step has an exact command or UI sequence AND a verification check. Visitor never wonders "did that work?"
+4. **Top 3 gotchas inline.** Don't make them dig into SKILL.md to learn the failure modes.
+5. **What it does NOT do.** Sets the boundary, points to the companion skill that DOES do the next thing.
+6. **Sample natural-language prompts.** Shows them what's possible after setup. Sells the outcome, not the install.
+
+**Don't ship a README that just says "see SKILL.md."** Visitors landing from a blog post or LinkedIn link should be able to scan the README and either start the install or decide it's not for them. Without clicking deeper.
